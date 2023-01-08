@@ -1,11 +1,16 @@
 package main
 
+// E:\projects\save_game_diff>go run save_game_diff.go --files "C:\Program Files (x86)\Steam\userdata\33882143\239160\remote\Thief7C.sav" "C:\Program Files (x86)\Steam\userdata\33882143\239160\remote\Thief8C.sav" "C:\Program Files (x86)\Steam\userdata\33882143\239160\remote\Thief9C.sav" --values 2 1 0
+
 import (
 	"fmt"
 	"io"
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
+
+	"github.com/thoas/go-funk"
 )
 
 const AppName = "SAVE_GAME_DIFF"
@@ -97,6 +102,57 @@ func changeCurrentWorkingDir() {
 	os.Chdir(exeDir)
 }
 
+func getFiles() []string {
+	files := make([]string, 0)
+
+	index := funk.IndexOfString(os.Args, "--files") + 1
+
+	for ; index < len(os.Args); index++ {
+		value := os.Args[index]
+
+		if strings.HasPrefix(value, "--") {
+			break
+		}
+
+		files = append(files, value)
+	}
+
+	return files
+}
+
+func getValues() []string {
+	values := make([]string, 0)
+
+	index := funk.IndexOfString(os.Args, "--values") + 1
+
+	for ; index < len(os.Args); index++ {
+		value := os.Args[index]
+
+		if strings.HasPrefix(value, "--") {
+			break
+		}
+
+		values = append(values, value)
+	}
+
+	return values
+}
+
+func _main() {
+	files := getFiles()
+	values := getValues()
+
+	if len(files) != len(values) {
+		printAppInfo()
+		printUsages()
+
+		return
+	}
+
+	log.Println("Files to compare:", files)
+	log.Println("Values to search:", values)
+}
+
 func main() {
 	changeCurrentWorkingDir()
 	duplicateLog()
@@ -108,4 +164,6 @@ func main() {
 
 		os.Exit(1)
 	}
+
+	_main()
 }
