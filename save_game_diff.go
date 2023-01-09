@@ -243,7 +243,7 @@ func getDiffrences(files []string) map[int64][]byte {
 		}
 
 		if arrayIsDiff(bytesAtOffset) {
-			differences[offset] = bytesAtOffset
+			differences[offset-1] = bytesAtOffset
 		}
 	}
 
