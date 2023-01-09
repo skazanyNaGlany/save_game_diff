@@ -1,6 +1,7 @@
 package main
 
 // E:\projects\save_game_diff>go run save_game_diff.go --files "C:\Program Files (x86)\Steam\userdata\33882143\239160\remote\Thief7C.sav" "C:\Program Files (x86)\Steam\userdata\33882143\239160\remote\Thief8C.sav" "C:\Program Files (x86)\Steam\userdata\33882143\239160\remote\Thief9C.sav" --values 2 1 0
+// E:\projects\save_game_diff>go run save_game_diff.go --files "C:\Program Files (x86)\Steam\userdata\33882143\239160\remote\Thief7I.sav" "C:\Program Files (x86)\Steam\userdata\33882143\239160\remote\Thief8I.sav" "C:\Program Files (x86)\Steam\userdata\33882143\239160\remote\Thief9I.sav" --values 2 1 0
 
 import (
 	"fmt"
@@ -8,6 +9,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/thoas/go-funk"
@@ -120,8 +122,8 @@ func getFiles() []string {
 	return files
 }
 
-func getValues() []string {
-	values := make([]string, 0)
+func getValues() []byte {
+	values := make([]byte, 0)
 
 	index := funk.IndexOfString(os.Args, "--values") + 1
 
@@ -132,10 +134,124 @@ func getValues() []string {
 			break
 		}
 
-		values = append(values, value)
+		b, err := strconv.ParseInt(value, 10, 64)
+
+		if err != nil {
+			log.Panicln(value, "is not a byte")
+		}
+
+		if b < 0 || b > 255 {
+			log.Panicln(value, "is not a byte")
+		}
+
+		values = append(values, byte(b))
 	}
 
 	return values
+}
+
+func arrayIsDiff(data []byte) bool {
+	lenData := len(data)
+
+	for i := 0; i < lenData; i++ {
+		for _, b := range data {
+			if data[i] != b {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+func arrayContainsArray(valuesToFind []byte, inArray []byte) bool {
+	count := 0
+
+	for _, b := range valuesToFind {
+		for _, b2 := range inArray {
+			if b2 == b {
+				count++
+				break
+			}
+		}
+	}
+
+	return count == len(inArray)
+}
+
+func arraysEqual(a, b []byte) bool {
+	if len(a) != len(b) {
+		return false
+	}
+
+	for i, v := range a {
+		if v != b[i] {
+			return false
+		}
+	}
+
+	return true
+}
+
+func getDiffrences(files []string) map[int64][]byte {
+	var differences map[int64][]byte
+	var handles []*os.File
+
+	differences = make(map[int64][]byte)
+
+	for _, pathname := range files {
+		ihandle, err := os.Open(pathname)
+
+		if err != nil {
+			log.Println("Cannot open file:", err)
+			break
+		}
+
+		handles = append(handles, ihandle)
+	}
+
+	offset := int64(0)
+
+	for {
+		bytesAtOffset := make([]byte, 0)
+		offset++
+
+		for _, ihandle := range handles {
+			if _, err := ihandle.Seek(offset-1, io.SeekStart); err != nil {
+				continue
+			}
+
+			b := make([]byte, 1)
+
+			n, err := ihandle.Read(b)
+
+			if err != nil {
+				continue
+			}
+
+			if n < 1 {
+				continue
+			}
+
+			bytesAtOffset = append(bytesAtOffset, b[0])
+		}
+
+		lenBytesAtOffset := len(bytesAtOffset)
+
+		if lenBytesAtOffset <= 1 {
+			break
+		}
+
+		if arrayIsDiff(bytesAtOffset) {
+			differences[offset] = bytesAtOffset
+		}
+	}
+
+	for _, ihandle := range handles {
+		ihandle.Close()
+	}
+
+	return differences
 }
 
 func _main() {
@@ -151,6 +267,24 @@ func _main() {
 
 	log.Println("Files to compare:", files)
 	log.Println("Values to search:", values)
+
+	log.Println("Looking for differences")
+
+	differences := getDiffrences(files)
+
+	log.Println("Count of differenes:", len(differences))
+
+	for offset, data := range differences {
+		if arrayContainsArray(values, data) {
+			perfectMatch := arraysEqual(values, data)
+
+			if perfectMatch {
+				log.Printf("Match at offset %v (0x%X): %v [PERFECT MATCH]", offset, offset, data)
+			} else {
+				log.Printf("Match at offset %v (0x%X): %v", offset, offset, data)
+			}
+		}
+	}
 }
 
 func main() {
