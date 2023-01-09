@@ -55,13 +55,16 @@ func printUsages() {
 	log.Println("Options:")
 
 	log.Println("\t--files <file1> <file2> [...]")
-	log.Println("\t\t\t files to compare")
+	log.Println("\t\t\t files to compare (count of the files must be the same as count of the values)")
 	log.Println()
 	log.Println("\t--values <value1> <value2> [...]")
 	log.Println("\t\t\t values to search in each file")
 	log.Println()
 	log.Println("\t--help")
 	log.Println("\t\t\t this help")
+	log.Println()
+	log.Println("Example (each save file has less \"health\" in game):")
+	log.Println("go run save_game_diff.go --files \"save1.sav\" \"save2.sav\" \"save3.sav\" --values 100 70 30")
 	log.Println()
 }
 
