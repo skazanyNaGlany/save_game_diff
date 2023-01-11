@@ -1,0 +1,25 @@
+
+E:\projects\save_game_diff>go run save_game_diff.go --files "C:\Program Files (x86)\Steam\userdata\33882143\239160\remote\Thief7I.sav" "C:\Program Files (x86)\Steam\userdata\33882143\239160\remote\Thief8I.sav" "C:\Program Files (x86)\Steam\userdata\33882143\239160\remote\Thief9I.sav" --values 9 8 7 
+2023/01/09 02:52:25 SAVE_GAME_DIFF v0.1
+2023/01/09 02:52:25
+2023/01/09 02:52:25 Compare each file to find specific differences.
+2023/01/09 02:52:25
+2023/01/09 02:52:25 Files to compare: [C:\Program Files (x86)\Steam\userdata\33882143\239160\remote\Thief7I.sav C:\Program Files (x86)\Steam\userdata\33882143\239160\remote\Thief8I.sav C:\Program Files (x86)\Steam\userdata\33882143\239160\remote\Thief9I.sav]
+2023/01/09 02:52:25 Values to search: [9 8 7]
+2023/01/09 02:52:25 Looking for differences
+2023/01/09 02:52:26 Count of differenes: 252342
+2023/01/09 02:52:26 Match at offset 232874 [9 7 8]
+
+
+
+
+E:\projects\save_game_diff>go run save_game_diff.go --files "C:\Program Files (x86)\Steam\userdata\33882143\239160\remote\Thief7I.sav" "C:\Program Files (x86)\Steam\userdata\33882143\239160\remote\Thief8I.sav" "C:\Program Files (x86)\Steam\userdata\33882143\239160\remote\Thief9I.sav" --values 7 6 5 
+2023/01/09 02:50:58 SAVE_GAME_DIFF v0.1
+2023/01/09 02:50:58
+2023/01/09 02:50:58 Compare each file to find specific differences.
+2023/01/09 02:50:58
+2023/01/09 02:50:58 Files to compare: [C:\Program Files (x86)\Steam\userdata\33882143\239160\remote\Thief7I.sav C:\Program Files (x86)\Steam\userdata\33882143\239160\remote\Thief8I.sav C:\Program Files (x86)\Steam\userdata\33882143\239160\remote\Thief9I.sav]
+2023/01/09 02:50:58 Values to search: [7 6 5]
+2023/01/09 02:50:58 Looking for differences
+2023/01/09 02:51:00 Count of differenes: 252342
+2023/01/09 02:51:00 Match at offset 106972 [6 7 5]
