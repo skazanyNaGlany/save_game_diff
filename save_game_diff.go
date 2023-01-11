@@ -2,6 +2,15 @@ package main
 
 // E:\projects\save_game_diff>go run save_game_diff.go --files "C:\Program Files (x86)\Steam\userdata\33882143\239160\remote\Thief7C.sav" "C:\Program Files (x86)\Steam\userdata\33882143\239160\remote\Thief8C.sav" "C:\Program Files (x86)\Steam\userdata\33882143\239160\remote\Thief9C.sav" --values 2 1 0
 // E:\projects\save_game_diff>go run save_game_diff.go --files "C:\Program Files (x86)\Steam\userdata\33882143\239160\remote\Thief7I.sav" "C:\Program Files (x86)\Steam\userdata\33882143\239160\remote\Thief8I.sav" "C:\Program Files (x86)\Steam\userdata\33882143\239160\remote\Thief9I.sav" --values 2 1 0
+// E:\projects\save_game_diff>go run save_game_diff.go --files "C:\Program Files (x86)\Steam\userdata\33882143\239160\remote\Thief7I.sav" "C:\Program Files (x86)\Steam\userdata\33882143\239160\remote\Thief8I.sav" "C:\Program Files (x86)\Steam\userdata\33882143\239160\remote\Thief9I.sav" --decreased_value_by 10
+// E:\projects\save_game_diff>go run save_game_diff.go --files "C:\Program Files (x86)\Steam\userdata\33882143\239160\remote\Thief7I.sav" "C:\Program Files (x86)\Steam\userdata\33882143\239160\remote\Thief8I.sav" "C:\Program Files (x86)\Steam\userdata\33882143\239160\remote\Thief9I.sav" --increased_value_by 10
+
+// TODO need help for each mode (with examples)
+// mode0 --values
+// mode 1 --decreased_value
+// mode 1 --decreased_value_by
+// mode 2 --increased_value
+// mode 2 --increased_value_by
 
 import (
 	"fmt"
@@ -68,6 +77,20 @@ func printUsages() {
 	log.Println()
 }
 
+func hasArgument(name string) bool {
+	for i, argument := range os.Args {
+		if i < 0 {
+			continue
+		}
+
+		if argument == name {
+			return true
+		}
+	}
+
+	return false
+}
+
 func shouldPrintUsages() bool {
 	lenArgs := len(os.Args)
 
@@ -75,60 +98,42 @@ func shouldPrintUsages() bool {
 		return true
 	}
 
-	if lenArgs < 6 {
+	if hasArgument("--help") {
 		return true
 	}
 
-	hasFiles := false
-	hasValues := false
+	hasFiles := hasArgument("--files")
+	hasValues := hasArgument("--values")
+	hasDecreasedValue := hasArgument("--decreased_value")
+	hasDecreasedValueBy := hasArgument("--decreased_value_by")
+	hasIncreasedValue := hasArgument("--increased_value")
+	hasIncreasedValueBy := hasArgument("--increased_value_by")
 
-	for i, arg := range os.Args {
-		if i < 0 {
-			continue
-		}
-
-		if arg == "--files" {
-			hasFiles = true
-		} else if arg == "--values" {
-			hasValues = true
-		} else if arg == "--help" {
-			return true
-		}
-
-		if hasFiles && hasValues {
-			return false
-		}
+	if !hasFiles {
+		return true
 	}
 
-	return true
+	return !hasValues && !hasDecreasedValue && !hasDecreasedValueBy && !hasIncreasedValue && !hasIncreasedValueBy
 }
 
 func changeCurrentWorkingDir() {
 	os.Chdir(exeDir)
 }
 
-func getFiles() []string {
-	files := make([]string, 0)
+func getArgumentValues(name string, allowNoArgument bool) []string {
+	values := make([]string, 0)
 
-	index := funk.IndexOfString(os.Args, "--files") + 1
+	index := funk.IndexOfString(os.Args, name)
 
-	for ; index < len(os.Args); index++ {
-		value := os.Args[index]
-
-		if strings.HasPrefix(value, "--") {
-			break
+	if index < 0 {
+		if allowNoArgument {
+			return values
 		}
 
-		files = append(files, value)
+		log.Panicln("No argument", name)
 	}
 
-	return files
-}
-
-func getValues() []byte {
-	values := make([]byte, 0)
-
-	index := funk.IndexOfString(os.Args, "--values") + 1
+	index++
 
 	for ; index < len(os.Args); index++ {
 		value := os.Args[index]
@@ -137,20 +142,31 @@ func getValues() []byte {
 			break
 		}
 
-		b, err := strconv.ParseInt(value, 10, 64)
-
-		if err != nil {
-			log.Panicln(value, "is not a byte")
-		}
-
-		if b < 0 || b > 255 {
-			log.Panicln(value, "is not a byte")
-		}
-
-		values = append(values, byte(b))
+		values = append(values, value)
 	}
 
 	return values
+}
+
+func getArgumentValuesAsBytes(name string, allowNoArgument bool) []byte {
+	values := getArgumentValues(name, allowNoArgument)
+	byteValues := make([]byte, 0)
+
+	for _, sValue := range values {
+		b, err := strconv.ParseInt(sValue, 10, 64)
+
+		if err != nil {
+			log.Panicln(sValue, "is not a byte")
+		}
+
+		if b < 0 || b > 255 {
+			log.Panicln(sValue, "is not a byte")
+		}
+
+		byteValues = append(byteValues, byte(b))
+	}
+
+	return byteValues
 }
 
 func arrayIsDiff(data []byte) bool {
@@ -257,9 +273,9 @@ func getDiffrences(files []string) map[int64][]byte {
 	return differences
 }
 
-func _main() {
-	files := getFiles()
-	values := getValues()
+func mode0_Values() {
+	files := getArgumentValues("--files", false)
+	values := getArgumentValuesAsBytes("--values", false)
 
 	if len(files) != len(values) {
 		printAppInfo()
@@ -270,7 +286,6 @@ func _main() {
 
 	log.Println("Files to compare:", files)
 	log.Println("Values to search:", values)
-
 	log.Println("Looking for differences")
 
 	differences := getDiffrences(files)
@@ -282,10 +297,167 @@ func _main() {
 			perfectMatch := arraysEqual(values, data)
 
 			if perfectMatch {
-				log.Printf("Match at offset %v (0x%X): %v [PERFECT MATCH]", offset, offset, data)
+				printMatch(offset, data, "[PERFECT MATCH]")
 			} else {
-				log.Printf("Match at offset %v (0x%X): %v", offset, offset, data)
+				printMatch(offset, data)
 			}
+		}
+	}
+}
+
+func printMatch(offset int64, data []byte, additionalText ...string) {
+	additional := ""
+
+	if len(additionalText) > 0 {
+		additional = fmt.Sprintf("%v", additionalText)
+	}
+
+	log.Printf("Match at offset %v (0x%X): %v %v", offset, offset, data, additional)
+}
+
+func mode1_DecreasedValue() {
+	files := getArgumentValues("--files", false)
+	byValue := getArgumentValuesAsBytes("--decreased_value_by", true)
+
+	if len(files) < 2 {
+		printAppInfo()
+		printUsages()
+
+		return
+	}
+
+	lenByValue := len(byValue)
+
+	if lenByValue > 0 {
+		if lenByValue != 1 {
+			printAppInfo()
+			printUsages()
+
+			return
+		}
+	}
+
+	log.Println("Files to compare:", files)
+
+	if lenByValue > 0 {
+		log.Println("Must decrease by:", byValue[0])
+	}
+
+	log.Println("Looking for differences")
+
+	differences := getDiffrences(files)
+
+	log.Println("Count of differenes:", len(differences))
+
+	for offset, data := range differences {
+		if arrayDecreasedValues(data, byValue...) {
+			printMatch(offset, data)
+		}
+	}
+}
+
+// From left to right
+func arrayDecreasedValues(data []byte, byValue ...byte) bool {
+	lenData := len(data)
+	hasByValue := len(byValue) == 1
+
+	for i, value := range data {
+		if i+1 == lenData {
+			break
+		}
+
+		if value <= data[i+1] {
+			return false
+		}
+
+		if hasByValue {
+			if value-data[i+1] != byValue[0] {
+				return false
+			}
+		}
+	}
+
+	return true
+}
+
+// From right to left
+func arrayIncreasedValues(data []byte, byValue ...byte) bool {
+	hasByValue := len(byValue) == 1
+
+	for i := len(data) - 1; i >= 0; i-- {
+		if i == 0 {
+			break
+		}
+
+		value := data[i]
+
+		if data[i-1] >= value {
+			return false
+		}
+
+		if hasByValue {
+			if value-data[i-1] != byValue[0] {
+				return false
+			}
+		}
+	}
+
+	return true
+}
+
+func _main() {
+	hasValues := hasArgument("--values")
+	hasDecreasedValue := hasArgument("--decreased_value")
+	hasDecreasedValueBy := hasArgument("--decreased_value_by")
+	hasIncreasedValue := hasArgument("--increased_value")
+	hasIncreasedValueBy := hasArgument("--increased_value_by")
+
+	if hasValues {
+		mode0_Values()
+	} else if hasDecreasedValue || hasDecreasedValueBy {
+		mode1_DecreasedValue()
+	} else if hasIncreasedValue || hasIncreasedValueBy {
+		mode2_IncreasedValue()
+	}
+}
+
+func mode2_IncreasedValue() {
+	files := getArgumentValues("--files", false)
+	byValue := getArgumentValuesAsBytes("--increased_value_by", true)
+
+	if len(files) < 2 {
+		printAppInfo()
+		printUsages()
+
+		return
+	}
+
+	lenByValue := len(byValue)
+
+	if lenByValue > 0 {
+		if lenByValue != 1 {
+			printAppInfo()
+			printUsages()
+
+			return
+		}
+	}
+
+	log.Println("Files to compare:", files)
+
+	if lenByValue > 0 {
+		log.Println("Must increase by:", byValue[0])
+	}
+
+	log.Println("Looking for differences")
+
+	differences := getDiffrences(files)
+
+	log.Println("Count of differenes:", len(differences))
+
+	for offset, data := range differences {
+		if arrayIncreasedValues(data, byValue...) {
+			printMatch(offset, data)
 		}
 	}
 }
